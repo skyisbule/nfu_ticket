@@ -14,14 +14,15 @@ import java.util.HashMap;
 
 public class SubscribleOutThread extends Thread {
 
-    public SubscribleOutThread(String date,String cookie,TicketMonitor monitor){
+    public SubscribleOutThread(String date,String cookie,TicketMonitor monitor,int routeId){
         this.date    = date;
         this.cookie  = cookie;
         this.monitor = monitor;
         param = new HashMap<>();
         param.put("time", DateUtil.getSpecifiedDayAfter(date));
-        param.put("route_id",13);
+        param.put("route_id",routeId);
         param.put("type","prevday");
+        if (routeId == 14) goWhere = " 中大回学校 ";
     }
 
     private String date;
@@ -30,6 +31,7 @@ public class SubscribleOutThread extends Thread {
     private ObjectMapper mapper = new ObjectMapper();
     private TicketMonitor monitor;
     private boolean firstRead = true;
+    private String  goWhere   = " 学校去中大 ";
 
     //以下为生命周期函数所需要的监听变量
     private Integer lastLeftTicket = 0;
@@ -37,7 +39,7 @@ public class SubscribleOutThread extends Thread {
 
     @Override
     public void run(){
-        System.out.println("开始尝试监听："+date+"去中大的情况");
+        System.out.println("开始尝试监听："+date+goWhere+"的情况");
         monitor.init();
         while (DateUtil.compareDate(date, DateUtil.getNowDate()) >= 0) {
             String result = doRequest();
@@ -56,7 +58,7 @@ public class SubscribleOutThread extends Thread {
                 if (leftTicketChanged(ticket)) monitor.onLeftSeatChange(ticket);
 
             } catch (Exception e) {
-                System.out.println("去中大：" + date + " obj序列化失败，爬虫的返回值为：" + result);
+                System.out.println(goWhere + date + " obj序列化失败，爬虫的返回值为：" + result);
             }
 
         }
