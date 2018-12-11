@@ -32,6 +32,9 @@ public class SubscribleOutThread extends Thread {
     private TicketMonitor monitor;
     private boolean firstRead = true;
     private String  goWhere   = " 学校去中大 ";
+    private String  finalResult;
+    private Integer overTimeTrainCount = -1;
+    private Integer desLength = -1;
 
     //以下为生命周期函数所需要的监听变量
     private Integer lastLeftTicket = 0;
@@ -43,6 +46,7 @@ public class SubscribleOutThread extends Thread {
         monitor.init();
         while (DateUtil.compareDate(date, DateUtil.getNowDate()) >= 0) {
             String result = doRequest();
+            finalResult = result;
             try {
                 Thread.sleep(1000 * 5);
                 //json data 序列化为对象
@@ -56,12 +60,16 @@ public class SubscribleOutThread extends Thread {
                 }
                 //当剩余座位发生变化时
                 if (leftTicketChanged(ticket)) monitor.onLeftSeatChange(ticket);
-
+                //当显示的加班车的数量发生变化时
+                if (overTimeTrainChanged(ticket)) monitor.onOverTimeTrainChange(ticket);
+                if (busNumChanged(ticket)) monitor.onBusNumChange(ticket);
             } catch (Exception e) {
                 System.out.println(goWhere + date + " obj序列化失败，爬虫的返回值为：" + result);
+                monitor.onConvertFail(result);
             }
 
         }
+        monitor.onDestroy(finalResult);
     }
 
     //检测剩余座位有没有变化
@@ -75,6 +83,39 @@ public class SubscribleOutThread extends Thread {
             return true;
         }
         return false;
+    }
+
+    private boolean overTimeTrainChanged(Ticket ticket){
+        int count = this.countOverTimeTrain(ticket);
+        if (overTimeTrainCount == -1){
+            overTimeTrainCount = count;
+            return false;
+        }
+        if (count != overTimeTrainCount) {
+            overTimeTrainCount = count;
+            return true;
+        }
+        return false;
+
+    }
+
+    private boolean busNumChanged(Ticket ticket){
+        int count = ticket.desc.size();
+        if (desLength == -1){
+            desLength = count;
+            return false;
+        }
+        return desLength != count;
+    }
+
+    private int countOverTimeTrain(Ticket ticket){
+        int count = 0;
+        for (Desc desc : ticket.desc) {
+            if (desc.bus_type.equals("2") && desc.view_schedule.equals("2")){
+                count++;
+            }
+        }
+        return count;
     }
 
     //获取最新的信息

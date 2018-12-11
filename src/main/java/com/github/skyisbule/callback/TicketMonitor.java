@@ -11,10 +11,10 @@ public interface TicketMonitor {
     public void onFirstReadData(Ticket ticket);
 
     //当监视者退出时
-    public void onDestroy(Ticket ticket);
+    public void onDestroy(String finalResult);
 
     //爬取的值无法转成Ticket对象时
-    public void onConvertFail(Ticket ticket);
+    public void onConvertFail(String ticketResult);
 
     //每次抓取新数据时
     public void onFlushData(Ticket ticket);
